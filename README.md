@@ -1,1 +1,2 @@
+B cell receptor sequences were downloaded from Sequence Read Archive accession ID SRX190717. For processing and alignment of raw sequences, pRESTO was used following the vignette (https://presto.readthedocs.io/en/stable/workflows/Jiang2013_Workflow.html) that is tailored to this dataset. For mutation analysis and lineage reconstruction, standard workflow from the Immcantation Framework were used as described under ‘B cell repertoire analysis’. 
 
