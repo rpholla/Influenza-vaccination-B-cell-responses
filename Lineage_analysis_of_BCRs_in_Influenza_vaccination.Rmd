@@ -1,0 +1,425 @@
+---
+title: "Lineage_analysis_of_BCRs_in_Influenza_vaccination"
+author: "Prasida Holla"
+date: "2025-02-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Load packages
+```{r load packages, include=TRUE, message=FALSE, warning=FALSE}
+library(alakazam)
+library(igraph)
+library(googledrive)
+library(shazam)
+library(tidyverse)
+library(scales)
+library(ggrepel)
+library(seqinr)
+library(Biostrings)
+library(ggseqlogo)
+```
+
+# import sequences
+```{r import seqeuences, include=TRUE, message=FALSE}
+temp<- tempfile(fileext = ".rds")
+dl <- drive_download(
+as_id("1ikz2SZPmktoHU0Dy7zpzXc9-h_a9tmW7"), path = temp, overwrite = TRUE)
+all.seq  <-readRDS(file = dl$local_path)
+
+all_merged<-bind_rows(all.seq, .id="subject")
+```
+
+# Count clones across each subject
+```{r count clones across each subject, include=TRUE, message=FALSE}
+# Count clones
+clones_count<-lapply(names(all.seq), 
+       function (x) countClones(all.seq[[x]], 
+       group=c("sample", "cprimer", "v_call"), 
+       copy="duplicate_count", 
+       clone="cloneid_merged" )
+)
+
+names(clones_count)<-names(all.seq)
+
+# save as a table
+clones_count.tbl <- bind_rows(clones_count, .id = "sample_merged")
+```
+
+# Split table into individual subject
+```{r split dataframe based on individual samples, include=TRUE, message=FALSE}
+p6m<-all.seq$p6m
+p6m<-p6m[, -52]
+p6m<-p6m%>%
+   dplyr::rename(., "clone_id"="cloneid_merged")
+
+p11m<-all.seq$p11m
+p11m<-p11m[, -52]
+p11m<-p11m%>%
+  dplyr::rename(., "clone_id"="cloneid_merged")
+
+p133m<-all.seq$p133m
+p133m<-p133m[, -52]
+p133m<-p133m%>%
+   dplyr::rename(., "clone_id"="cloneid_merged")
+
+p29m<-all.seq$p29m
+p29m<-p29m[, -52]
+p29m<-p29m%>%
+   dplyr::rename(., "clone_id"="cloneid_merged")
+
+p93m<-all.seq$p93m
+p93m<-p93m[, -52]
+p93m<-p93m%>%
+   dplyr::rename(., "clone_id"="cloneid_merged")
+
+p58m<-all.seq$p58m
+p58m<-p58m[, -52]
+p58m<-p58m%>%
+   dplyr::rename(., "clone_id"="cloneid_merged")
+
+p25m<-all.seq$p25m
+p25m<-p25m[, -52]
+p25m<-p25m%>%
+   dplyr::rename(., "clone_id"="cloneid_merged")
+
+p43m<-all.seq$p43m
+p43m<-p43m[, -52]
+p43m<-p43m%>%
+   dplyr::rename(., "clone_id"="cloneid_merged")
+
+p44m<-all.seq$p44m
+p44m<-p44m[, -52]
+p44m<-p44m%>%
+   dplyr::rename(., "clone_id"="cloneid_merged")
+
+p60m<-all.seq$p60m
+p60m<-p60m[, -52]
+p60m<-p60m%>%
+   dplyr::rename(., "clone_id"="cloneid_merged")
+```
+
+# create trees for specific clone IDs
+```{r plot selected lineage trees, include=TRUE, message=FALSE}
+# Download and install Phylip 3.6 from here https://phylipweb.github.io/phylip/install.html.
+# Follow instructions and provide a file path for the DNA parsiomny (dnapars) file
+
+phylip_exec<-"~/Downloads/phylip-3.695/exe/dnapars"
+
+############################### Lineage 23091 ##############################################
+sub1 <- subset(p6m, clone_id== "23091")
+clone1 <- makeChangeoClone(sub1, text_fields=c("sequence", "sample", "cprimer"), pad_end=T, mask_char = "N")  
+
+# create tree
+graph_clone1 <- buildPhylipLineage(clone1, phylip_exec, rm_temp=TRUE)
+
+# customize
+V(graph_clone1)$color[V(graph_clone1)$sample == "6_V1_PBMC"] <- "seagreen"
+V(graph_clone1)$color[V(graph_clone1)$sample == "6_V2_NB"] <- "steelblue"
+V(graph_clone1)$color[V(graph_clone1)$sample == "6_V2_PB"] <- "red"
+V(graph_clone1)$color[V(graph_clone1)$sample == "6_V3_PBMC"] <- "yellow"
+#V(graph_clone1)$vertex.shape[V(graph_clone1)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone1)$shape[V(graph_clone1)$cprimer == "IgG"] <- "circle"
+V(graph_clone1)$color[V(graph_clone1)$name == "Germline"] <- "black"
+V(graph_clone1)$color[grepl("Inferred", V(graph_clone1)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone1, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","6_V1_PBMC","6_V2_NB", "6_V2_PB", "Not identified", "6_V3_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+# write tree data
+write.csv(clone1@data, "p6m_clone23091.csv")
+
+################################## Lineage 45347 ##############################################
+sub2 <- subset(p11m, clone_id== "45347")
+clone2 <- makeChangeoClone(sub2, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone2 <- buildPhylipLineage(clone2, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone2)$color[V(graph_clone2)$sample == "11_V1_PBMC"] <- "seagreen"
+V(graph_clone2)$color[V(graph_clone2)$sample == "11_V2_NB"] <- "steelblue"
+V(graph_clone2)$color[V(graph_clone2)$sample == "11_V2_PB"] <- "red"
+V(graph_clone2)$color[V(graph_clone2)$sample == "11_V3_PBMC"] <- "yellow"
+#V(graph_clone2)$vertex.shape[V(graph_clone2)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone2)$shape[V(graph_clone2)$cprimer == "IgG"] <- "circle"
+V(graph_clone2)$color[V(graph_clone2)$name == "Germline"] <- "black"
+V(graph_clone2)$color[grepl("Inferred", V(graph_clone2)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone2, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","11_V1_PBMC","11_V2_NB", "11_V2_PB", "Not identified", "11_V3_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone2@data, "p11m_clone45347.csv")
+
+####################################### Lineage 7799 ############################################
+
+sub3 <- subset(p29m, clone_id== "7799")
+clone3 <- makeChangeoClone(sub3, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone3 <- buildPhylipLineage(clone3, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone3)$color[V(graph_clone3)$sample == "29_V1_PBMC"] <- "seagreen"
+V(graph_clone3)$color[V(graph_clone3)$sample == "29_V2_NB"] <- "steelblue"
+V(graph_clone3)$color[V(graph_clone3)$sample == "29_V2_PB"] <- "red"
+V(graph_clone3)$color[V(graph_clone3)$sample == "29_V3_PBMC"] <- "yellow"
+#V(graph_clone3)$vertex.shape[V(graph_clone3)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone3)$shape[V(graph_clone3)$cprimer == "IgG"] <- "circle"
+V(graph_clone3)$color[V(graph_clone3)$name == "Germline"] <- "black"
+V(graph_clone3)$color[grepl("Inferred", V(graph_clone3)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone3, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","29_V1_PBMC","29_V2_NB", "29_V2_PB", "Not identified", "29_V3_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone3@data, "p29m_clone7799.csv")
+
+####################################### Lineage 11549 ##########################################
+
+sub4 <- subset(p133m, clone_id== "11549")
+clone4 <- makeChangeoClone(sub4, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone4 <- buildPhylipLineage(clone4, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone4)$color[V(graph_clone4)$sample == "133_V1_PBMC"] <- "seagreen"
+V(graph_clone4)$color[V(graph_clone4)$sample == "133_V2_NB"] <- "steelblue"
+V(graph_clone4)$color[V(graph_clone4)$sample == "133_V2_PB"] <- "red"
+V(graph_clone4)$color[V(graph_clone4)$sample == "133_V4_PBMC"] <- "yellow"
+#V(graph_clone4)$vertex.shape[V(graph_clone4)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone4)$shape[V(graph_clone4)$cprimer == "IgG"] <- "circle"
+V(graph_clone4)$color[V(graph_clone4)$name == "Germline"] <- "black"
+V(graph_clone4)$color[grepl("Inferred", V(graph_clone4)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone4, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","133_V1_PBMC","133_V2_NB", "133_V2_PB", "Not identified", "133_V4_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone4@data, "p133m_clone11549.csv")
+
+####################################### Lineage 7809 ##########################################
+
+sub5 <- subset(p29m, clone_id== "7809")
+clone5 <- makeChangeoClone(sub5, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone5 <- buildPhylipLineage(clone5, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone5)$color[V(graph_clone5)$sample == "29_V1_PBMC"] <- "seagreen"
+V(graph_clone5)$color[V(graph_clone5)$sample == "29_V2_NB"] <- "steelblue"
+V(graph_clone5)$color[V(graph_clone5)$sample == "29_V2_PB"] <- "red"
+V(graph_clone5)$color[V(graph_clone5)$sample == "29_V4_PBMC"] <- "yellow"
+#V(graph_clone5)$vertex.shape[V(graph_clone5)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone5)$shape[V(graph_clone5)$cprimer == "IgG"] <- "circle"
+V(graph_clone5)$color[V(graph_clone5)$name == "Germline"] <- "black"
+V(graph_clone5)$color[grepl("Inferred", V(graph_clone5)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone5, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","29_V1_PBMC","29_V2_NB", "29_V2_PB", "Not identified", "29_V4_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone5@data, "p29m_clone7809.csv")
+
+####################################### Lineage 1921 ##########################################
+
+sub6 <- subset(p133m, clone_id== "1921")
+clone6 <- makeChangeoClone(sub6, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone6 <- buildPhylipLineage(clone6, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone6)$color[V(graph_clone6)$sample == "133_V1_PBMC"] <- "seagreen"
+V(graph_clone6)$color[V(graph_clone6)$sample == "133_V2_NB"] <- "steelblue"
+V(graph_clone6)$color[V(graph_clone6)$sample == "133_V2_PB"] <- "red"
+V(graph_clone6)$color[V(graph_clone6)$sample == "133_V4_PBMC"] <- "yellow"
+#V(graph_clone6)$vertex.shape[V(graph_clone6)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone6)$shape[V(graph_clone6)$cprimer == "IgG"] <- "circle"
+V(graph_clone6)$color[V(graph_clone6)$name == "Germline"] <- "black"
+V(graph_clone6)$color[grepl("Inferred", V(graph_clone6)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone6, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","133_V1_PBMC","133_V2_NB", "133_V2_PB", "Not identified", "133_V4_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone6@data, "p133m_clone1921.csv")
+
+####################################### Lineage 9686 ##########################################
+sub7 <- subset(p133m, clone_id== "9686")
+clone7 <- makeChangeoClone(sub7, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone7 <- buildPhylipLineage(clone7, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone7)$color[V(graph_clone7)$sample == "133_V1_PBMC"] <- "seagreen"
+V(graph_clone7)$color[V(graph_clone7)$sample == "133_V2_NB"] <- "steelblue"
+V(graph_clone7)$color[V(graph_clone7)$sample == "133_V2_PB"] <- "red"
+V(graph_clone7)$color[V(graph_clone7)$sample == "133_V4_PBMC"] <- "yellow"
+#V(graph_clone7)$vertex.shape[V(graph_clone7)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone7)$shape[V(graph_clone7)$cprimer == "IgG"] <- "circle"
+V(graph_clone7)$color[V(graph_clone7)$name == "Germline"] <- "black"
+V(graph_clone7)$color[grepl("Inferred", V(graph_clone7)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone7, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","133_V1_PBMC","133_V2_NB", "133_V2_PB", "Not identified", "133_V4_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone7@data, "p133m_clone9686.csv")
+
+####################################### Lineage 23376 ##########################################
+
+sub8 <- subset(p25m, clone_id== "23376")
+clone8 <- makeChangeoClone(sub8, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone8 <- buildPhylipLineage(clone8, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone8)$color[V(graph_clone8)$sample == "25_V1_PBMC"] <- "seagreen"
+V(graph_clone8)$color[V(graph_clone8)$sample == "25_V2_NB"] <- "steelblue"
+V(graph_clone8)$color[V(graph_clone8)$sample == "25_V2_PB"] <- "red"
+V(graph_clone8)$color[V(graph_clone8)$sample == "25_V4_PBMC"] <- "yellow"
+#V(graph_clone8)$vertex.shape[V(graph_clone8)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone8)$shape[V(graph_clone8)$cprimer == "IgG"] <- "circle"
+V(graph_clone8)$color[V(graph_clone8)$name == "Germline"] <- "black"
+V(graph_clone8)$color[grepl("Inferred", V(graph_clone8)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone8, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","25_V1_PBMC","25_V2_NB", "25_V2_PB", "Not identified", "25_V4_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone8@data, "p25m_clone23376.csv")
+
+####################################### Lineage 62394 ##########################################
+sub9 <- subset(p25m, clone_id== "62394")
+clone9 <- makeChangeoClone(sub9, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone9 <- buildPhylipLineage(clone9, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone9)$color[V(graph_clone9)$sample == "25_V1_PBMC"] <- "seagreen"
+V(graph_clone9)$color[V(graph_clone9)$sample == "25_V2_NB"] <- "steelblue"
+V(graph_clone9)$color[V(graph_clone9)$sample == "25_V2_PB"] <- "red"
+V(graph_clone9)$color[V(graph_clone9)$sample == "25_V4_PBMC"] <- "yellow"
+#V(graph_clone9)$vertex.shape[V(graph_clone9)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone9)$shape[V(graph_clone9)$cprimer == "IgG"] <- "circle"
+V(graph_clone9)$color[V(graph_clone9)$name == "Germline"] <- "black"
+V(graph_clone9)$color[grepl("Inferred", V(graph_clone9)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone9, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","25_V1_PBMC","25_V2_NB", "25_V2_PB", "Not identified", "25_V4_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone9@data, "p25m_clone62394.csv")
+
+####################################### Lineage 63649 ##########################################
+
+sub10 <- subset(p25m, clone_id== "63649")
+clone10 <- makeChangeoClone(sub10, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone10 <- buildPhylipLineage(clone10, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone10)$color[V(graph_clone10)$sample == "25_V1_PBMC"] <- "seagreen"
+V(graph_clone10)$color[V(graph_clone10)$sample == "25_V2_NB"] <- "steelblue"
+V(graph_clone10)$color[V(graph_clone10)$sample == "25_V2_PB"] <- "red"
+V(graph_clone10)$color[V(graph_clone10)$sample == "25_V4_PBMC"] <- "yellow"
+#V(graph_clone10)$vertex.shape[V(graph_clone10)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone10)$shape[V(graph_clone10)$cprimer == "IgG"] <- "circle"
+V(graph_clone10)$color[V(graph_clone10)$name == "Germline"] <- "black"
+V(graph_clone10)$color[grepl("Inferred", V(graph_clone10)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone10, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","25_V1_PBMC","25_V2_NB", "25_V2_PB", "Not identified", "25_V4_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone10@data, "p25m_clone63649.csv")
+
+####################################### Lineage 16588 ##########################################
+
+sub11 <- subset(p44m, clone_id== "16588")
+clone11 <- makeChangeoClone(sub11, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone11 <- buildPhylipLineage(clone11, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone11)$color[V(graph_clone11)$sample == "44_V1_PBMC"] <- "seagreen"
+V(graph_clone11)$color[V(graph_clone11)$sample == "44_V2_NB"] <- "steelblue"
+V(graph_clone11)$color[V(graph_clone11)$sample == "44_V2_PB"] <- "red"
+V(graph_clone11)$color[V(graph_clone11)$sample == "44_V4_PBMC"] <- "yellow"
+#V(graph_clone11)$vertex.shape[V(graph_clone11)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone11)$shape[V(graph_clone11)$cprimer == "IgG"] <- "circle"
+V(graph_clone11)$color[V(graph_clone11)$name == "Germline"] <- "black"
+V(graph_clone11)$color[grepl("Inferred", V(graph_clone11)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone11, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","44_V1_PBMC","44_V2_NB", "44_V2_PB", "Not identified", "44_V4_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone11@data, "p44m_clone16588.csv")
+
+####################################### Lineage 176 ##########################################
+
+sub12 <- subset(p44m, clone_id== "176")
+clone12 <- makeChangeoClone(sub12, text_fields=c("sequence", "sample", "cprimer"), pad_end=TRUE, mask_char = "N")  
+graph_clone12 <- buildPhylipLineage(clone12, phylip_exec, rm_temp=TRUE)
+
+V(graph_clone12)$color[V(graph_clone12)$sample == "44_V1_PBMC"] <- "seagreen"
+V(graph_clone12)$color[V(graph_clone12)$sample == "44_V2_NB"] <- "steelblue"
+V(graph_clone12)$color[V(graph_clone12)$sample == "44_V2_PB"] <- "red"
+V(graph_clone12)$color[V(graph_clone12)$sample == "44_V4_PBMC"] <- "yellow"
+#V(graph_clone12)$vertex.shape[V(graph_clone12)$cprimer == "IgA"] <- "rectangle"
+#V(graph_clone12)$shape[V(graph_clone12)$cprimer == "IgG"] <- "circle"
+V(graph_clone12)$color[V(graph_clone12)$name == "Germline"] <- "black"
+V(graph_clone12)$color[grepl("Inferred", V(graph_clone12)$name)] <- "white"
+
+# Plot the tree with color coded subset
+par(mar=c(0, 0, 0, 0) + 0.05)
+plot(graph_clone12, layout=layout_as_tree, vertex.frame.color="grey", 
+     vertex.label.color="black", edge.label.color="black", 
+     edge.arrow.mode=0, show.node.label=TRUE)
+# Add legend
+legend("topleft", c("Germline", "Inferred","44_V1_PBMC","44_V2_NB", "44_V2_PB", "Not identified", "44_V4_PBMC"), 
+       fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
+
+write.csv(clone12@data, "p44m_clone176.csv")
+
+```
+
