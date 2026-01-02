@@ -1,0 +1,196 @@
+---
+title: "Mutation analysis of BCRs from old and young influenza vaccinnees"
+author: "Prasida Holla"
+date: "2025-02-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This dataset comes from this paper
+<https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3699344/>
+
+and SRA accession number SRA058972
+
+#Load packages
+```{r load packages, include=TRUE, message=FALSE, warning=FALSE}
+library(alakazam)
+library(igraph)
+library(googledrive)
+library(shazam)
+library(tidyverse)
+library(scales)
+library(ggrepel)
+library(seqinr)
+library(Biostrings)
+library(ggseqlogo)
+```
+
+# import sequences
+```{r import seqeuences, include=TRUE, message=FALSE}
+temp<- tempfile(fileext = ".rds")
+dl <- drive_download(
+as_id("1ikz2SZPmktoHU0Dy7zpzXc9-h_a9tmW7"), path = temp, overwrite = TRUE)
+all.seq  <-readRDS(file = dl$local_path)
+
+all_files<-bind_rows(all.seq, .id="subject")
+```
+
+# Perform mutation analysis on all the sequences
+```{r mutation analysis with shazam, include=TRUE, message=FALSE}
+#Overall mutations: seperated by replaement an substitution
+all_files<- observedMutations(all_files, sequenceColumn="sequence_alignment",
+                         germlineColumn="germline_alignment_d_mask",
+                         regionDefinition=NULL, 
+                         frequency=T,combine = F,
+                         nproc=1)
+
+#Overall mutations: unseparated
+all_files<- observedMutations(all_files, sequenceColumn="sequence_alignment",
+                         germlineColumn="germline_alignment_d_mask",
+                         regionDefinition=NULL, 
+                         frequency=T,combine = T,
+                         nproc=1)
+
+# per region mutations
+## clean up mismatches between germline and query sequences
+all_files<- data.frame(lapply(all_files, as.character), stringsAsFactors=FALSE)
+x<-data.frame(nchar(all_files$sequence_alignment))
+y<-data.frame(nchar(all_files$germline_alignment_d_mask))
+z<-cbind(x,y)
+a<-subset(z, z$nchar.all_files.sequence_alignment.!=z$nchar.all_files.germline_alignment_d_mask.)
+# and get the row numberss that have this discrepency, and remove them
+all_files<-subset(all_files, !rownames(all_files)%in%rownames(a))
+
+# mutations in framework regions and CDRs
+all_files<- observedMutations(all_files, sequenceColumn="sequence_alignment",
+                         germlineColumn="germline_alignment_d_mask",
+                         regionDefinition=IMGT_V_BY_REGIONS,
+                         frequency=T,combine = F,
+                         nproc=1)
+
+# mutations per codon
+all_files<- observedMutations(all_files, sequenceColumn="sequence_alignment",
+                         germlineColumn="germline_alignment_d_mask",
+                         regionDefinition=IMGT_V_BY_CODONS,
+                         frequency=T,combine = F,
+                         nproc=1)
+
+# add r+s values for each mutation freq by region/ codon for total mutations in the region and remove the individual replacement and silent mutations
+
+mutate(mu_freq_2 = mu_freq_2_r + mu_freq_2_s) %>%
+  mutate(mu_freq_1 = mu_freq_1_r + mu_freq_1_s) %>%
+  mutate(mu_freq_3 = mu_freq_3_r + mu_freq_3_s) %>%
+  mutate(mu_freq_4 = mu_freq_4_r + mu_freq_4_s) %>%
+  mutate(mu_freq_5 = mu_freq_5_r + mu_freq_5_s) %>%
+  mutate(mu_freq_6 = mu_freq_6_r + mu_freq_6_s) %>%
+  mutate(mu_freq_7 = mu_freq_7_r + mu_freq_7_s) %>%
+  mutate(mu_freq_8 = mu_freq_8_r + mu_freq_8_s) %>%
+  mutate(mu_freq_9 = mu_freq_9_r + mu_freq_9_s) %>%
+  mutate(mu_freq_10 = mu_freq_10_r + mu_freq_10_s) %>%
+  mutate(mu_freq_11 = mu_freq_11_r + mu_freq_11_s) %>%
+  mutate(mu_freq_12 = mu_freq_12_r + mu_freq_12_s) %>%
+  mutate(mu_freq_13 = mu_freq_13_r + mu_freq_13_s) %>%
+  mutate(mu_freq_14 = mu_freq_14_r + mu_freq_14_s) %>%
+  mutate(mu_freq_15 = mu_freq_15_r + mu_freq_15_s) %>%
+  mutate(mu_freq_16 = mu_freq_16_r + mu_freq_16_s) %>%
+  mutate(mu_freq_17 = mu_freq_17_r + mu_freq_17_s) %>%
+  mutate(mu_freq_18 = mu_freq_18_r + mu_freq_18_s) %>%
+  mutate(mu_freq_19 = mu_freq_19_r + mu_freq_19_s) %>%
+  mutate(mu_freq_20 = mu_freq_20_r + mu_freq_20_s) %>%
+  mutate(mu_freq_21 = mu_freq_21_r + mu_freq_21_s) %>%
+  mutate(mu_freq_22 = mu_freq_22_r + mu_freq_22_s) %>%
+  mutate(mu_freq_23 = mu_freq_23_r + mu_freq_23_s) %>%
+  mutate(mu_freq_24 = mu_freq_24_r + mu_freq_24_s) %>%
+  mutate(mu_freq_25 = mu_freq_25_r + mu_freq_25_s) %>%
+  mutate(mu_freq_26 = mu_freq_26_r + mu_freq_26_s) %>%
+  mutate(mu_freq_27 = mu_freq_27_r + mu_freq_27_s) %>%
+  mutate(mu_freq_28 = mu_freq_28_r + mu_freq_28_s) %>%
+  mutate(mu_freq_29 = mu_freq_29_r + mu_freq_29_s) %>%
+  mutate(mu_freq_30 = mu_freq_30_r + mu_freq_30_s) %>%
+  mutate(mu_freq_31 = mu_freq_31_r + mu_freq_31_s) %>%
+  mutate(mu_freq_32 = mu_freq_32_r + mu_freq_32_s) %>%
+  mutate(mu_freq_33 = mu_freq_33_r + mu_freq_33_s) %>%
+  mutate(mu_freq_34 = mu_freq_34_r + mu_freq_34_s) %>%
+  mutate(mu_freq_35 = mu_freq_35_r + mu_freq_35_s) %>%
+  mutate(mu_freq_36 = mu_freq_36_r + mu_freq_36_s) %>%
+  mutate(mu_freq_37 = mu_freq_37_r + mu_freq_37_s) %>%
+  mutate(mu_freq_38 = mu_freq_38_r + mu_freq_38_s) %>%
+  mutate(mu_freq_39 = mu_freq_39_r + mu_freq_39_s) %>%
+  mutate(mu_freq_40 = mu_freq_40_r + mu_freq_40_s) %>%
+  mutate(mu_freq_41 = mu_freq_41_r + mu_freq_41_s) %>%
+  mutate(mu_freq_42 = mu_freq_42_r + mu_freq_42_s) %>%
+  mutate(mu_freq_43 = mu_freq_43_r + mu_freq_43_s) %>%
+  mutate(mu_freq_44 = mu_freq_44_r + mu_freq_44_s) %>%
+  mutate(mu_freq_45 = mu_freq_45_r + mu_freq_45_s) %>%
+  mutate(mu_freq_46 = mu_freq_46_r + mu_freq_46_s) %>%
+  mutate(mu_freq_47 = mu_freq_47_r + mu_freq_47_s) %>%
+  mutate(mu_freq_48 = mu_freq_48_r + mu_freq_48_s) %>%
+  mutate(mu_freq_49 = mu_freq_49_r + mu_freq_49_s) %>%
+  mutate(mu_freq_50 = mu_freq_50_r + mu_freq_50_s) %>%
+  mutate(mu_freq_51 = mu_freq_51_r + mu_freq_51_s) %>%
+  mutate(mu_freq_52 = mu_freq_52_r + mu_freq_52_s) %>%
+  mutate(mu_freq_53 = mu_freq_53_r + mu_freq_53_s) %>%
+  mutate(mu_freq_54 = mu_freq_54_r + mu_freq_54_s) %>%
+  mutate(mu_freq_55 = mu_freq_55_r + mu_freq_55_s) %>%
+  mutate(mu_freq_56 = mu_freq_56_r + mu_freq_56_s) %>%
+  mutate(mu_freq_57 = mu_freq_57_r + mu_freq_57_s) %>%
+  mutate(mu_freq_58 = mu_freq_58_r + mu_freq_58_s) %>%
+  mutate(mu_freq_59 = mu_freq_59_r + mu_freq_59_s) %>%
+  mutate(mu_freq_60 = mu_freq_60_r + mu_freq_60_s) %>%
+  mutate(mu_freq_61 = mu_freq_61_r + mu_freq_61_s) %>%
+  mutate(mu_freq_62 = mu_freq_62_r + mu_freq_62_s) %>%
+  mutate(mu_freq_63 = mu_freq_63_r + mu_freq_63_s) %>%
+  mutate(mu_freq_64 = mu_freq_64_r + mu_freq_64_s) %>%
+  mutate(mu_freq_65 = mu_freq_65_r + mu_freq_65_s) %>%
+  mutate(mu_freq_66 = mu_freq_66_r + mu_freq_66_s) %>%
+  mutate(mu_freq_67 = mu_freq_67_r + mu_freq_67_s) %>%
+  mutate(mu_freq_68 = mu_freq_68_r + mu_freq_68_s) %>%
+  mutate(mu_freq_69 = mu_freq_69_r + mu_freq_69_s) %>%
+  mutate(mu_freq_70 = mu_freq_70_r + mu_freq_70_s) %>%
+  mutate(mu_freq_71 = mu_freq_71_r + mu_freq_71_s) %>%
+  mutate(mu_freq_72 = mu_freq_72_r + mu_freq_72_s) %>%
+  mutate(mu_freq_73 = mu_freq_73_r + mu_freq_73_s) %>%
+  mutate(mu_freq_74 = mu_freq_74_r + mu_freq_74_s) %>%
+  mutate(mu_freq_75 = mu_freq_75_r + mu_freq_75_s) %>%
+  mutate(mu_freq_76 = mu_freq_76_r + mu_freq_76_s) %>%
+  mutate(mu_freq_77 = mu_freq_77_r + mu_freq_77_s) %>%
+  mutate(mu_freq_78 = mu_freq_78_r + mu_freq_78_s) %>%
+  mutate(mu_freq_79 = mu_freq_79_r + mu_freq_79_s) %>%
+  mutate(mu_freq_80 = mu_freq_80_r + mu_freq_80_s) %>%
+  mutate(mu_freq_81 = mu_freq_81_r + mu_freq_81_s) %>%
+  mutate(mu_freq_82 = mu_freq_82_r + mu_freq_82_s) %>%
+  mutate(mu_freq_83 = mu_freq_83_r + mu_freq_83_s) %>%
+  mutate(mu_freq_84 = mu_freq_84_r + mu_freq_84_s) %>%
+  mutate(mu_freq_85 = mu_freq_85_r + mu_freq_85_s) %>%
+  mutate(mu_freq_86 = mu_freq_86_r + mu_freq_86_s) %>%
+  mutate(mu_freq_87 = mu_freq_87_r + mu_freq_87_s) %>%
+  mutate(mu_freq_88 = mu_freq_88_r + mu_freq_88_s) %>%
+  mutate(mu_freq_89 = mu_freq_89_r + mu_freq_89_s) %>%
+  mutate(mu_freq_90 = mu_freq_90_r + mu_freq_90_s) %>%
+  mutate(mu_freq_91 = mu_freq_91_r + mu_freq_91_s) %>%
+  mutate(mu_freq_92 = mu_freq_92_r + mu_freq_92_s) %>%
+  mutate(mu_freq_93 = mu_freq_93_r + mu_freq_93_s) %>%
+  mutate(mu_freq_94 = mu_freq_94_r + mu_freq_94_s) %>%
+  mutate(mu_freq_95 = mu_freq_95_r + mu_freq_95_s) %>%
+  mutate(mu_freq_96 = mu_freq_96_r + mu_freq_96_s) %>%
+  mutate(mu_freq_97 = mu_freq_97_r + mu_freq_97_s) %>%
+  mutate(mu_freq_98 = mu_freq_98_r + mu_freq_98_s) %>%
+  mutate(mu_freq_99 = mu_freq_99_r + mu_freq_99_s) %>%
+  mutate(mu_freq_100 = mu_freq_100_r + mu_freq_100_s) %>%
+  mutate(mu_freq_101 = mu_freq_101_r + mu_freq_101_s) %>%
+  mutate(mu_freq_102 = mu_freq_102_r + mu_freq_102_s) %>%
+  mutate(mu_freq_103 = mu_freq_103_r + mu_freq_103_s) %>%
+  mutate(mu_freq_104 = mu_freq_104_r + mu_freq_104_s) %>%
+  mutate(mu_freq_fwr1 = mu_freq_fwr1_r + mu_freq_fwr1_s) %>%
+  mutate(mu_freq_fwr2 = mu_freq_fwr2_r + mu_freq_fwr2_s) %>%
+  mutate(mu_freq_fwr3 = mu_freq_fwr3_r + mu_freq_fwr3_s) %>%
+  mutate(mu_freq_cdr1 = mu_freq_cdr1_r + mu_freq_cdr1_s) %>%
+  mutate(mu_freq_cdr2 = mu_freq_cdr2_r + mu_freq_cdr2_s) %>%
+  select(-contains("_r|_s"))
+
+#Isolate VH4-34 sequences
+allv434<-all_files[grep("IGHV4-34", all_files$v_call),]
+```
