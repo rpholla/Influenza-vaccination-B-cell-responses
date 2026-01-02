@@ -23,7 +23,8 @@ library(Biostrings)
 library(ggseqlogo)
 ```
 
-# import sequences
+# import sequences. Clonality was assessed using changeo in the immcantation framework (using the container) after merging fasta files containing sequences across different times post-vaccination. This is reflected in the column "cloneid_merged"
+
 ```{r import seqeuences, include=TRUE, message=FALSE}
 temp<- tempfile(fileext = ".rds")
 dl <- drive_download(
@@ -34,6 +35,7 @@ all_merged<-bind_rows(all.seq, .id="subject")
 ```
 
 # Count clones across each subject
+
 ```{r count clones across each subject, include=TRUE, message=FALSE}
 # Count clones
 clones_count<-lapply(names(all.seq), 
@@ -50,59 +52,60 @@ clones_count.tbl <- bind_rows(clones_count, .id = "sample_merged")
 ```
 
 # Split table into individual subject
-```{r split dataframe based on individual samples, include=TRUE, message=FALSE}
-p6m<-all.seq$p6m
-p6m<-p6m[, -52]
-p6m<-p6m%>%
+```{r split dataframe based on individual samples, include=FALSE, message=FALSE}
+p6m <- all_merged %>%
+  subset(., subject == "p6m") %>%
+  select(-clone_id) %>%
    dplyr::rename(., "clone_id"="cloneid_merged")
 
-p11m<-all.seq$p11m
-p11m<-p11m[, -52]
-p11m<-p11m%>%
-  dplyr::rename(., "clone_id"="cloneid_merged")
-
-p133m<-all.seq$p133m
-p133m<-p133m[, -52]
-p133m<-p133m%>%
+p11m <- all_merged %>%
+  subset(., subject == "p11m") %>%
+  select(-clone_id) %>%
    dplyr::rename(., "clone_id"="cloneid_merged")
 
-p29m<-all.seq$p29m
-p29m<-p29m[, -52]
-p29m<-p29m%>%
+p133m <- all_merged %>%
+  subset(., subject == "p133m") %>%
+  select(-clone_id) %>%
    dplyr::rename(., "clone_id"="cloneid_merged")
 
-p93m<-all.seq$p93m
-p93m<-p93m[, -52]
-p93m<-p93m%>%
+p29m <- all_merged %>%
+  subset(., subject == "p29m") %>%
+  select(-clone_id) %>%
    dplyr::rename(., "clone_id"="cloneid_merged")
 
-p58m<-all.seq$p58m
-p58m<-p58m[, -52]
-p58m<-p58m%>%
+p93m <- all_merged %>%
+  subset(., subject == "p93m") %>%
+  select(-clone_id) %>%
    dplyr::rename(., "clone_id"="cloneid_merged")
 
-p25m<-all.seq$p25m
-p25m<-p25m[, -52]
-p25m<-p25m%>%
+p58m <- all_merged %>%
+  subset(., subject == "p58m") %>%
+  select(-clone_id) %>%
    dplyr::rename(., "clone_id"="cloneid_merged")
 
-p43m<-all.seq$p43m
-p43m<-p43m[, -52]
-p43m<-p43m%>%
+p25m <- all_merged %>%
+  subset(., subject == "p25m") %>%
+  select(-clone_id) %>%
    dplyr::rename(., "clone_id"="cloneid_merged")
 
-p44m<-all.seq$p44m
-p44m<-p44m[, -52]
-p44m<-p44m%>%
+p43m <- all_merged %>%
+  subset(., subject == "p43m") %>%
+  select(-clone_id) %>%
    dplyr::rename(., "clone_id"="cloneid_merged")
 
-p60m<-all.seq$p60m
-p60m<-p60m[, -52]
-p60m<-p60m%>%
+p44m <- all_merged %>%
+  subset(., subject == "p44m") %>%
+  select(-clone_id) %>%
+   dplyr::rename(., "clone_id"="cloneid_merged")
+
+p60m <- all_merged %>%
+  subset(., subject == "p60m") %>%
+  select(-clone_id) %>%
    dplyr::rename(., "clone_id"="cloneid_merged")
 ```
 
-# create trees for specific clone IDs
+# create trees for specific clone IDs (since en masse clonal tree generation does not work). Clone IDs were selected based on V gene (IGHV4-34), clone size, inclusion of class switching events and differentiation events (naive/ all sequences to plasmablasts)
+
 ```{r plot selected lineage trees, include=TRUE, message=FALSE}
 # Download and install Phylip 3.6 from here https://phylipweb.github.io/phylip/install.html.
 # Follow instructions and provide a file path for the DNA parsiomny (dnapars) file
@@ -420,6 +423,5 @@ legend("topleft", c("Germline", "Inferred","44_V1_PBMC","44_V2_NB", "44_V2_PB", 
        fill=c("black", "white", "seagreen", "steelblue", "red", "grey", "yellow"), cex=0.75)
 
 write.csv(clone12@data, "p44m_clone176.csv")
-
 ```
 
